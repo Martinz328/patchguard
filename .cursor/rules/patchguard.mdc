@@ -1,0 +1,168 @@
+YOU ARE: A senior full-stack engineer building PatchGuard — a real-time website security scanner for African SMEs. MVP v1.0. Deadline: 10 May 2026.
+
+WHAT IT DOES: User enters URL → scans in real time → returns structured security report with severity ratings, plain-English explanations, fix recommendations. Critical findings show a "Book a Fix Consultation" CTA (Calendly). Consultation is the revenue mechanism.
+
+WHO IT'S FOR: SME business owners in Cameroon/Central Africa. NOT developers. Every word in the UI must be understandable by a non-technical business owner.
+
+═══ TECH STACK — NON-NEGOTIABLE ═══
+Never use any technology not on this list.
+
+- Frontend: React 18 + TypeScript + Vite. NO Next.js.
+- Styling: Tailwind CSS ONLY. No inline styles. No CSS modules.
+- UI Components: shadcn/ui first, always.
+- Icons: lucide-react ONLY. Never inline SVG. No other icon libs.
+- Routing: React Router v6 (useNavigate, useParams, useLocation).
+- Backend: Supabase Edge Functions (Deno runtime). NO Node.js. NO Express.
+- Database: Supabase PostgreSQL via supabase-js v2.
+- Supabase client: createClient from '@supabase/supabase-js'. Init in src/lib/supabase.ts ONLY.
+- Animations: Tailwind utilities only. Framer Motion only if explicitly requested.
+- Forms: React controlled components + useState. No Formik. No react-hook-form.
+- State: useState + useEffect ONLY. No Redux. No Zustand. No Context API.
+- HTTP (frontend): supabase.functions.invoke() ONLY. NEVER fetch() to external URLs from browser.
+- HTTP (edge function): Native Deno fetch() ONLY. No npm packages in Edge Functions.
+- Deploy FE: Vercel. Deploy BE: Supabase CLI.
+
+═══ FOLDER STRUCTURE — EXACT ═══
+patchguard/
+├── supabase/functions/scan-url/index.ts
+├── supabase/migrations/001_create_scan_results.sql
+└── src/
+    ├── components/ui/           ← shadcn/ui only
+    ├── components/ScanForm.tsx
+    ├── components/FindingCard.tsx
+    ├── components/SecurityScoreBadge.tsx
+    ├── components/ConsultationCTA.tsx
+    ├── pages/HomePage.tsx
+    ├── pages/ScanningPage.tsx
+    ├── pages/ReportPage.tsx
+    ├── pages/ErrorPage.tsx
+    ├── lib/supabase.ts
+    ├── lib/validateUrl.ts
+    ├── lib/scoreUtils.ts
+    ├── types/scan.ts
+    └── App.tsx
+
+4 ROUTES ONLY: / | /scanning | /report/:scanId | /error
+
+═══ CODE RULES ═══
+- Always TypeScript. Never .js in src/.
+- All props, state, args, return types must be explicitly typed.
+- Never use 'any'. Use 'unknown' + type guards.
+- All shared types in src/types/scan.ts.
+- interface for object shapes. type for unions/primitives.
+- Functional components ONLY. Never class components.
+- NEVER dangerouslySetInnerHTML — ever. XSS protection is critical.
+- Destructure props at function signature level.
+- Every useEffect needs complete dependency array + cleanup.
+- Never call navigate() inside render — only in handlers or useEffect.
+- NEVER throw unhandled errors to UI. Every error has user-facing fallback.
+- NEVER show raw errors, stack traces, or HTTP codes to users.
+- Edge Function errors return HTTP 200 with { error: true } — never 500.
+- Navigate to /error on unrecoverable frontend failure.
+
+Naming: Components=PascalCase | functions=camelCase | interfaces=IPascalCase | types=PascalCase | handlers=handleX | booleans=isX/hasX | constants=SCREAMING_SNAKE
+
+═══ DESIGN SYSTEM ═══
+COLORS:
+- Primary: #1A56DB (buttons, links, headings)
+- Primary hover: #1E40AF
+- Primary light: #EBF0FF
+- CRITICAL/danger: #DC2626
+- WARNING: #D97706
+- PASS/success: #16A34A
+- Text primary: #111827
+- Text body: #374151
+- Text muted: #6B7280
+- Background: #FFFFFF
+- Surface: #F9FAFB
+- Border: #E5E7EB
+
+TYPOGRAPHY (Inter font — import '@fontsource/inter'):
+- H1: text-4xl font-black text-gray-900
+- H2: text-2xl font-semibold text-blue-600
+- H3: text-lg font-semibold text-gray-900
+- Body: text-base text-gray-700 leading-relaxed
+- Small/label: text-sm text-gray-500
+- Score: text-6xl font-black (color by grade)
+- CTA button: text-base font-semibold text-white
+
+LAYOUT: max-w-4xl mx-auto | px-4 sm:px-6 lg:px-8 | Cards: rounded-xl border border-gray-200 bg-white p-6 shadow-sm | Section gaps: space-y-8 | Mobile-first always. Test: 375px, 768px, 1280px.
+
+COMPONENTS:
+- ScanForm input: w-full h-14 rounded-xl border-2 border-blue-200 focus:border-blue-500 text-lg pl-4 pr-32
+- Scan button: absolute right inside input. bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 h-10 rounded-lg
+- SecurityScoreBadge: 120px circle, score text-6xl, grade label below, drop shadow, color by grade band
+- FindingCard CRITICAL: border-l-4 border-red-500 bg-red-50 rounded-xl p-6 + CTA button
+- FindingCard WARNING: border-l-4 border-orange-400 bg-orange-50 rounded-xl p-6
+- FindingCard PASS: border-l-4 border-green-500 bg-green-50 rounded-xl p-6
+- ConsultationCTA: bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg w-full mt-4. Icon: Calendar (lucide). Opens Calendly new tab.
+- SeverityBadge: px-3 py-1 rounded-full text-sm font-bold. CRITICAL: bg-red-100 text-red-700. WARNING: bg-orange-100 text-orange-700. PASS: bg-green-100 text-green-700.
+- Progress bar (scanning): animate-pulse bg-blue-600 on bg-blue-100 track, rounded-full, indeterminate.
+
+ANIMATIONS: animate-pulse / animate-spin only. Fade-in: opacity-0→opacity-100 transition-opacity duration-300. Score: count-up 0→final. Cards: stagger on load. NEVER dramatic slide-ins, bounces, parallax.
+
+═══ PAGE SPECS ═══
+
+HOME (/):
+- Sticky navbar: PatchGuard wordmark #1A56DB bold left | "Security Made Accessible" gray text-sm right | bg-white border-b sticky top-0 z-50
+- Hero: "Know Your Vulnerabilities Before Attackers Do." — text-4xl md:text-5xl font-black centered max-w-2xl
+- Subheadline: "Free real-time security scan. No signup required. Results in under 10 seconds." text-lg text-gray-500 centered
+- ScanForm: centered, URL input + embedded button. Placeholder: "https://yourbusiness.com"
+- Trust strip: 3 items — shield-check "Free Scan" | zap "Under 10 Seconds" | user-x "No Signup Required" | text-sm text-gray-500
+- Footer: "© 2026 PatchGuard. Security Made Accessible." text-sm text-gray-400 text-center py-8
+
+SCANNING (/scanning):
+- Full screen centered, white bg, no navbar
+- Show URL being scanned
+- Indeterminate animated progress bar
+- Rotating status (2s): "Checking SSL certificate..." → "Analyzing security headers..." → "Testing redirect configuration..." → "Compiling your report..."
+- No back button. If >12s: "This is taking longer than usual. Hang tight..."
+
+REPORT (/report/:scanId):
+- Top: SecurityScoreBadge (large, centered) + URL + timestamp
+- Score sentence: 80+="Your website has good security foundations." | 50-79="Your website has some security gaps that need attention." | 0-49="Your website has critical security vulnerabilities that attackers can exploit."
+- Findings order: CRITICAL → WARNING → PASS. Alphabetical within group.
+- Each FindingCard: name (font-semibold) + SeverityBadge top row | plain-English explanation | fix recommendation (wrench icon) | CTA button on CRITICAL only (full width, bottom)
+- CTA text: "Book a Fix Consultation — Get this fixed by a security expert."
+- Bottom: "Scan Another URL" outlined button → /
+- All PASS: "Excellent! No critical issues found." + green checkmark
+
+ERROR (/error):
+- Icon: alert-triangle lucide 48px #D97706
+- Headline dynamic: UNREACHABLE="We Couldn't Reach That Website." | TIMEOUT="The Scan Took Too Long." | UNKNOWN="Something Went Wrong."
+- Body: human-readable, no technical terms, suggests next step
+- "Try Again" primary button → /
+- Small text: "If this keeps happening, contact us." linked to email
+
+═══ SECURITY RULES ═══
+- NEVER dangerouslySetInnerHTML
+- NEVER expose Supabase service_role key in frontend
+- NEVER fetch() to external URLs from React — always via Edge Function
+- NEVER sequential scan IDs — always UUID (crypto.randomUUID())
+- ALWAYS validate URL client-side before sending to Edge Function
+- ALWAYS block private IPs in Edge Function (SSRF protection)
+- ALWAYS set Access-Control-Allow-Origin: * on Edge Function responses
+- ALWAYS AbortController with 5s timeout on all external fetch in Edge Function
+- ALWAYS Promise.allSettled() for parallel checks
+- Env vars: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local — never hardcoded
+
+═══ AI OUTPUT RULES ═══
+ALWAYS:
+- Generate complete files — never partial code with "// rest here"
+- Include loading, error, and empty states for every data-fetching component
+- Use exact component names from folder structure above
+- Write Deno-compatible TypeScript for Edge Functions (no Node.js APIs)
+- Use realistic PatchGuard copy — never lorem ipsum
+
+NEVER:
+- Add features not specified above
+- Use libraries not in the approved stack
+- Generate code with XSS risk
+- Output incomplete files
+- Skip error handling on async operations
+- Install npm packages in Supabase Edge Functions
+
+After generating: state what was built, what to test, and what the next step is.
+---
+alwaysApply: true
+---

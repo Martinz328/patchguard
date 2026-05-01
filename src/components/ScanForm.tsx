@@ -16,11 +16,11 @@ export function ScanForm(): JSX.Element {
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     const result = validateUrl(url);
-    if (!result.isValid) {
-      setError(result.error);
+    if (!result.valid) {
+      setError(result.error ?? "Please check your URL and try again.");
       return;
     }
-    navigate("/scanning", { state: { url: result.normalizedUrl } });
+    navigate("/scanning", { state: { url: url.trim() } });
   };
 
   return (
@@ -44,13 +44,14 @@ export function ScanForm(): JSX.Element {
         />
         <button
           type="submit"
+          disabled={!url.trim()}
           className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-12 px-5 sm:px-6 rounded-lg bg-primary text-primary-foreground font-semibold text-sm sm:text-base shadow-sm transition-colors hover:bg-[hsl(var(--primary-hover))] focus:outline-none focus:ring-4 focus:ring-primary/30"
         >
           Scan Now
         </button>
       </div>
       {error ? (
-        <div className="mt-3 flex items-center gap-2 text-sm text-destructive" role="alert">
+        <div className="mt-3 flex items-center gap-2 text-sm text-red-500" role="alert">
           <AlertCircle size={16} aria-hidden="true" />
           <span>{error}</span>
         </div>

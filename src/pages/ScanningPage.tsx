@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Shield, Globe } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import type { ScanResponse } from "@/types/scan";
 
 const STATUS_MESSAGES: string[] = [
   "Checking SSL certificate...",
@@ -11,6 +13,28 @@ const STATUS_MESSAGES: string[] = [
 
 interface IScanLocationState {
   url?: string;
+}
+
+interface IScanResultSuccess {
+  scanId: string;
+}
+
+interface IScanResultError {
+  error: true;
+  errorType: "UNREACHABLE" | "TIMEOUT" | "INVALID_URL" | "UNKNOWN";
+  message: string;
+}
+
+function isScanError(data: unknown): data is IScanResultError {
+  if (!data || typeof data !== "object") return false;
+  const d = data as Record<string, unknown>;
+  return d.error === true && typeof d.errorType === "string" && typeof d.message === "string";
+}
+
+function isScanSuccess(data: unknown): data is IScanResultSuccess {
+  if (!data || typeof data !== "object") return false;
+  const d = data as Record<string, unknown>;
+  return typeof d.scanId === "string" && d.scanId.length > 0;
 }
 
 export default function ScanningPage(): JSX.Element {
@@ -37,12 +61,56 @@ export default function ScanningPage(): JSX.Element {
 
   useEffect(() => {
     const slow = window.setTimeout(() => setLongRunning(true), 12000);
-    const done = window.setTimeout(() => {
-      navigate("/report/demo-id", { state: { url } });
-    }, 3000);
+    const controller = new AbortController();
+
+    const run = async (): Promise<void> => {
+      if (!url) return;
+      try {
+        const { data, error } = await supabase.functions.invoke<ScanResponse>("scan-url", {
+          body: { url },
+          signal: controller.signal,
+        });
+
+        if (controller.signal.aborted) return;
+
+        if (error) {
+          navigate("/error", {
+            replace: true,
+            state: { errorType: "UNKNOWN", message: "An unexpected error occurred." },
+          });
+          return;
+        }
+
+        if (isScanError(data)) {
+          navigate("/error", {
+            replace: true,
+            state: { errorType: data.errorType, message: data.message },
+          });
+          return;
+        }
+
+        if (isScanSuccess(data)) {
+          navigate(`/report/${data.scanId}`, { replace: true });
+          return;
+        }
+
+        navigate("/error", {
+          replace: true,
+          state: { errorType: "UNKNOWN", message: "An unexpected error occurred." },
+        });
+      } catch {
+        if (controller.signal.aborted) return;
+        navigate("/error", {
+          replace: true,
+          state: { errorType: "UNKNOWN", message: "An unexpected error occurred." },
+        });
+      }
+    };
+
+    void run();
     return () => {
       window.clearTimeout(slow);
-      window.clearTimeout(done);
+      controller.abort();
     };
   }, [navigate, url]);
 

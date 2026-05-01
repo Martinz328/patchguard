@@ -1,46 +1,52 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle } from "lucide-react";
-import type { ErrorReason } from "@/types/scan";
+
+type ErrorType = "UNREACHABLE" | "TIMEOUT" | "INVALID_URL" | "UNKNOWN";
 
 interface IErrorLocationState {
-  reason?: ErrorReason;
+  errorType?: ErrorType;
+  message?: string;
 }
 
-const HEADLINES: Record<ErrorReason, string> = {
+const HEADLINES: Record<ErrorType, string> = {
   UNREACHABLE: "We Couldn't Reach That Website.",
   TIMEOUT: "The Scan Took Too Long.",
+  INVALID_URL: "That Doesn't Look Like a Valid URL.",
   UNKNOWN: "Something Went Wrong.",
 };
 
-const BODIES: Record<ErrorReason, string> = {
+const BODIES: Record<ErrorType, string> = {
   UNREACHABLE:
-    "We tried to connect but your website didn't respond. Double-check the address is correct and that the site is online, then try again.",
+    "The website you entered isn't responding. It may be offline, or the URL might have a typo. Double-check the address and try again.",
   TIMEOUT:
-    "Your website took too long to respond. This sometimes happens with slow connections — please try again in a moment.",
-  UNKNOWN:
-    "An unexpected problem stopped the scan. It's not your fault — please try again, and let us know if it keeps happening.",
+    "The scan is taking longer than expected. This can happen with slow websites. Please try again.",
+  INVALID_URL: "Please check the URL you entered and make sure it starts with https:// or http://.",
+  UNKNOWN: "We hit an unexpected issue. Please try again. If this keeps happening, contact us.",
 };
 
 export default function ErrorPage(): JSX.Element {
+  const navigate = useNavigate();
   const location = useLocation();
   const state = (location.state ?? {}) as IErrorLocationState;
-  const reason: ErrorReason = state.reason ?? "UNREACHABLE";
+  const errorType: ErrorType = state.errorType ?? "UNKNOWN";
+  const message: string | undefined = state.message;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
       <div className="max-w-md w-full text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-warning/10 text-warning mb-6">
-          <AlertTriangle size={32} aria-hidden="true" />
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-warning/10 mb-6">
+          <AlertTriangle size={48} className="text-[#D97706]" aria-hidden="true" />
         </div>
-        <h1 className="text-3xl font-black text-gray-900">{HEADLINES[reason]}</h1>
-        <p className="mt-4 text-base text-gray-600 leading-relaxed">{BODIES[reason]}</p>
+        <h1 className="text-3xl font-black text-gray-900">{HEADLINES[errorType]}</h1>
+        <p className="mt-4 text-base text-gray-600 leading-relaxed">{message ?? BODIES[errorType]}</p>
 
-        <Link
-          to="/"
-          className="mt-8 inline-flex items-center justify-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))] focus:outline-none focus:ring-4 focus:ring-primary/30"
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="mt-8 inline-flex w-full sm:w-auto items-center justify-center px-6 py-3 rounded-lg bg-primary text-primary-foreground font-semibold transition-colors hover:bg-[hsl(var(--primary-hover))] focus:outline-none focus:ring-4 focus:ring-primary/30"
         >
           Try Again
-        </Link>
+        </button>
 
         <p className="mt-6 text-sm text-gray-400">
           If this keeps happening,{" "}

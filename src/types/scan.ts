@@ -1,22 +1,33 @@
-export type Severity = "CRITICAL" | "WARNING" | "PASS";
-
-export type Grade = "SECURE" | "NEEDS_ATTENTION" | "AT_RISK";
+export type SeverityLevel = "CRITICAL" | "WARNING" | "PASS";
+export type GradeType = "GOOD" | "MODERATE" | "AT_RISK";
 
 export interface IFinding {
   id: string;
   name: string;
-  severity: Severity;
+  severity: SeverityLevel;
   explanation: string;
   recommendation: string;
+  learnMoreUrl?: string;
 }
 
-export interface IScanReport {
+export interface IScanResult {
   scanId: string;
   url: string;
   scannedAt: string;
   score: number;
-  grade: Grade;
+  grade: GradeType;
   findings: IFinding[];
+  durationMs: number;
 }
 
-export type ErrorReason = "UNREACHABLE" | "TIMEOUT" | "UNKNOWN";
+export interface IScanRequest {
+  url: string;
+}
+
+export interface IScanError {
+  error: true;
+  errorType: "UNREACHABLE" | "TIMEOUT" | "INVALID_URL" | "UNKNOWN";
+  message: string;
+}
+
+export type ScanResponse = IScanResult | IScanError;

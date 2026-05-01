@@ -1,37 +1,44 @@
-import type { Grade } from "@/types/scan";
+import type { GradeType, IFinding } from "@/types/scan";
 
-export interface IScoreMeta {
-  label: string;
-  sentence: string;
-  colorClass: string;
-  bgClass: string;
-  ringClass: string;
+export function calculateScore(findings: IFinding[]): number {
+  const baseScore: number = 100;
+  const penalty: number = findings.reduce((acc: number, finding: IFinding) => {
+    if (finding.severity === "CRITICAL") return acc + 20;
+    if (finding.severity === "WARNING") return acc + 8;
+    return acc;
+  }, 0);
+
+  const raw: number = baseScore - penalty;
+  return Math.max(0, Math.min(100, raw));
 }
 
-export function getScoreMeta(score: number, grade: Grade): IScoreMeta {
-  if (score >= 80 || grade === "SECURE") {
-    return {
-      label: "Secure",
-      sentence: "Your website has good security foundations.",
-      colorClass: "text-success",
-      bgClass: "bg-success/10",
-      ringClass: "ring-success/30",
-    };
-  }
-  if (score >= 50 || grade === "NEEDS_ATTENTION") {
-    return {
-      label: "Needs Attention",
-      sentence: "Your website has some security gaps that need attention.",
-      colorClass: "text-warning",
-      bgClass: "bg-warning/10",
-      ringClass: "ring-warning/30",
-    };
-  }
+export function getGrade(score: number): GradeType {
+  const clamped: number = Math.max(0, Math.min(100, score));
+  if (clamped >= 80) return "GOOD";
+  if (clamped >= 50) return "MODERATE";
+  return "AT_RISK";
+}
+
+export function getScoreColor(grade: GradeType): string {
+  if (grade === "GOOD") return "#16A34A";
+  if (grade === "MODERATE") return "#D97706";
+  return "#DC2626";
+}
+
+export function getScoreMessage(grade: GradeType): string {
+  if (grade === "GOOD") return "Your website has good security foundations.";
+  if (grade === "MODERATE") return "Your website has some security gaps that need attention.";
+  return "Your website has critical security vulnerabilities that attackers can exploit.";
+}
+/**
+ * Helper to get all score-related metadata in one object
+ * This satisfies the 'getScoreMeta' import error in components
+ */
+export const getScoreMeta = (score: number) => {
+  const grade = getGrade(score);
   return {
-    label: "At Risk",
-    sentence: "Your website has critical security vulnerabilities that attackers can exploit.",
-    colorClass: "text-destructive",
-    bgClass: "bg-destructive/10",
-    ringClass: "ring-destructive/30",
+    grade,
+    color: getScoreColor(grade),
+    message: getScoreMessage(grade),
   };
-}
+};
