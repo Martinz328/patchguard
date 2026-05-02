@@ -4,7 +4,7 @@ interface IConsultationCTAProps {
   findingName?: string;
 }
 
-const CALENDLY_URL = "https://calendly.com/patchguard/consultation";
+const CALENDLY_URL = "https://calendly.com/patchguard/30min";
 
 export function ConsultationCTA({ findingName }: IConsultationCTAProps): JSX.Element {
   const handleClick = (): void => {
