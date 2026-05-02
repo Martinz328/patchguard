@@ -1,15 +1,20 @@
-import { useEffect, useState } from "react";
-import type { Grade } from "@/types/scan";
-import { getScoreMeta } from "@/lib/scoreUtils";
+import { useEffect, useState, type CSSProperties } from "react";
+import type { GradeType } from "@/types/scan";
+import { getScoreColor, getScoreMeta } from "@/lib/scoreUtils";
 
 interface ISecurityScoreBadgeProps {
   score: number;
-  grade: Grade;
+  grade: GradeType;
 }
 
 export function SecurityScoreBadge({ score, grade }: ISecurityScoreBadgeProps): JSX.Element {
-  const meta = getScoreMeta(score, grade);
+  const meta = getScoreMeta(score);
+  const scoreColor = getScoreColor(grade);
   const [display, setDisplay] = useState<number>(0);
+
+  const ringStyle = {
+    "--tw-ring-color": scoreColor,
+  } as CSSProperties;
 
   useEffect(() => {
     const duration = 900;
@@ -29,10 +34,13 @@ export function SecurityScoreBadge({ score, grade }: ISecurityScoreBadgeProps): 
     <div className="flex flex-col items-center">
       <div
         className={`relative flex items-center justify-center w-36 h-36 rounded-full ${meta.bgClass} ring-8 ${meta.ringClass} shadow-md`}
+        style={ringStyle}
         role="img"
         aria-label={`Security score ${score} out of 100, ${meta.label}`}
       >
-        <span className={`text-6xl font-black tabular-nums ${meta.colorClass}`}>{display}</span>
+        <span className="text-6xl font-black tabular-nums" style={{ color: scoreColor }}>
+          {display}
+        </span>
       </div>
       <span className={`mt-4 text-sm font-bold uppercase tracking-widest ${meta.colorClass}`}>
         {meta.label}

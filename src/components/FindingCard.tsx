@@ -46,13 +46,15 @@ export function FindingCard({ finding }: IFindingCardProps): JSX.Element {
 
       <p className="mt-4 text-base text-gray-700 leading-relaxed">{finding.explanation}</p>
 
-      <div className="mt-4 flex items-start gap-2 rounded-lg bg-white/70 border border-gray-200 px-4 py-3">
-        <Wrench size={16} className="mt-0.5 text-gray-500 shrink-0" aria-hidden="true" />
-        <p className="text-sm text-gray-700 leading-relaxed">
-          <span className="font-semibold text-gray-900">How to fix: </span>
-          <code className="font-mono text-[13px] text-gray-800 break-words">{finding.recommendation}</code>
-        </p>
-      </div>
+      {finding.severity === "CRITICAL" || finding.severity === "WARNING" ? (
+        <div className="mt-4 flex items-start gap-2 rounded-lg bg-white/70 border border-gray-200 px-4 py-3">
+          <Wrench size={16} className="mt-0.5 text-gray-500 shrink-0" aria-hidden="true" />
+          <p className="text-sm text-gray-700 leading-relaxed">
+            <span className="font-semibold text-gray-900">How to fix: </span>
+            <code className="font-mono text-[13px] text-gray-800 break-words">{finding.recommendation}</code>
+          </p>
+        </div>
+      ) : null}
 
       {finding.severity === "CRITICAL" ? <ConsultationCTA findingName={finding.name} /> : null}
     </article>

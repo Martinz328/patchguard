@@ -39,6 +39,13 @@ const CORS_HEADERS: Record<string, string> = {
 
 const FETCH_TIMEOUT_MS: number = 5000;
 
+/** Shown when a header fetch fails for an unrelated reason; replaced when SSL/TLS already failed. */
+const HEADER_CHECK_UNAVAILABLE_EXPLANATION: string =
+  "We couldn't check this setting right now. Your website may still be fine, but we couldn't confirm it.";
+
+const HEADER_CHECK_UNAVAILABLE_SSL_EXPLANATION: string =
+  "We couldn't check this because your SSL certificate issue prevented us from reading your website's headers. Fix the SSL certificate first, then rescan.";
+
 function jsonResponse(body: ScanResponse): Response {
   return new Response(JSON.stringify(body), { status: 200, headers: CORS_HEADERS });
 }
@@ -340,8 +347,7 @@ async function runCheckHsts(inputUrl: URL): Promise<IFinding> {
       id: "hsts_header",
       name,
       severity: "WARNING",
-      explanation:
-        "We couldn't check this setting right now. Your website may still be fine, but we couldn't confirm it.",
+      explanation: HEADER_CHECK_UNAVAILABLE_EXPLANATION,
       recommendation:
         "If you manage your hosting, add: Strict-Transport-Security: max-age=31536000; includeSubDomains",
     });
@@ -377,8 +383,7 @@ async function runCheckXFrameOptions(inputUrl: URL): Promise<IFinding> {
       id: "x_frame_options",
       name,
       severity: "WARNING",
-      explanation:
-        "We couldn't check this setting right now. Your website may still be fine, but we couldn't confirm it.",
+      explanation: HEADER_CHECK_UNAVAILABLE_EXPLANATION,
       recommendation: "Add this header to your server: X-Frame-Options: SAMEORIGIN",
     });
   }
@@ -412,8 +417,7 @@ async function runCheckXContentTypeOptions(inputUrl: URL): Promise<IFinding> {
       id: "x_content_type_options",
       name,
       severity: "WARNING",
-      explanation:
-        "We couldn't check this setting right now. Your website may still be fine, but we couldn't confirm it.",
+      explanation: HEADER_CHECK_UNAVAILABLE_EXPLANATION,
       recommendation: "Add this header: X-Content-Type-Options: nosniff",
     });
   }
@@ -529,8 +533,7 @@ async function runCheckReferrerPolicy(inputUrl: URL): Promise<IFinding> {
       id: "referrer_policy",
       name,
       severity: "WARNING",
-      explanation:
-        "We couldn't check this setting right now. Your website may still be fine, but we couldn't confirm it.",
+      explanation: HEADER_CHECK_UNAVAILABLE_EXPLANATION,
       recommendation: "Add this header: Referrer-Policy: strict-origin-when-cross-origin",
     });
   }
@@ -643,7 +646,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
     });
 
     const ordered: IFinding[] = sortFindings(findings);
-    const score: number = calculateScore(ordered);
+
+    const sslTlsCheckFailed: boolean = ordered.some(
+      (f: IFinding) => f.id === "ssl_https" && f.severity === "WARNING",
+    );
+    const finalFindings: IFinding[] = sslTlsCheckFailed
+      ? ordered.map((f: IFinding) =>
+          f.explanation === HEADER_CHECK_UNAVAILABLE_EXPLANATION
+            ? { ...f, explanation: HEADER_CHECK_UNAVAILABLE_SSL_EXPLANATION }
+            : f,
+        )
+      : ordered;
+
+    const score: number = calculateScore(finalFindings);
     const grade: GradeType = getGrade(score);
     const durationMs: number = Date.now() - startedAt;
 
@@ -653,7 +668,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       scannedAt: new Date().toISOString(),
       score,
       grade,
-      findings: ordered,
+      findings: finalFindings,
       durationMs,
     };
 
